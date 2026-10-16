@@ -1,19 +1,559 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="کمپینو — سامانه هوشمند ساخت کمپین فروش برای کسب‌وکارهای کوچک" />
-    <title>کمپینو | سامانه ساخت کمپین فروش</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کمپینو | پلتفرم هوشمند مدیریت کمپین‌های بازاریابی</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: {
+                            DEFAULT: '#013220',
+                            dark: '#001a10',
+                            light: '#024d31'
+                        },
+                        cream: {
+                            DEFAULT: '#FFFBC7',
+                            light: '#FFFFEE',
+                            dark: '#f0ecb0'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Vazirmatn Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8fafc;
+            color: #013220;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #FFFBC7;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #013220;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+    <script type="text/babel">
+        function App() {
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [campaigns, setCampaigns] = React.useState(() => {
+                const saved = localStorage.getItem('campino_campaigns');
+                return saved ? JSON.parse(saved) : [
+                    { id: 1, name: 'تخفیف ویژه بلک فرایدی', goal: 'فروش مستقیم', status: 'فعال', budget: '۵,۰۰۰,۰۰۰ تومان', clicks: '1,240', conversion: '4.8%', sales: '۲۴,۵۰۰,۰۰۰ تومان' },
+                    { id: 2, name: 'جشنواره شب یلدا', goal: 'جذب لید', status: 'پیش‌نویس', budget: '۳,۰۰۰,۰۰۰ تومان', clicks: '450', conversion: '2.1%', sales: '۸,۲۰۰,۰۰۰ تومان' }
+                ];
+            });
+
+            // Wizard state (7 steps)
+            const [wizardStep, setWizardStep] = React.useState(1);
+            const [newCampaign, setNewCampaign] = React.useState({
+                name: '',
+                goal: 'فروش مستقیم',
+                audience: 'همه مشتریان',
+                offer: '۲۰٪ تخفیف ویژه',
+                channel: 'پیامک انبوه (SMS)',
+                schedule: 'فوری',
+                budget: '۲,۰۰۰,۰۰۰ تومان'
+            });
+
+            // Settings state
+            const [settings, setSettings] = React.useState({
+                companyName: 'استارتاپ نمونه',
+                email: 'admin@campino.ir',
+                smsApi: 'API_KEY_XXXXX',
+                notifications: true
+            });
+
+            React.useEffect(() => {
+                localStorage.setItem('campino_campaigns', JSON.stringify(campaigns));
+            }, [campaigns]);
+
+            const templates = [
+                { id: 't1', title: 'بلک فرایدی (حراج بزرگ)', goal: 'فروش مستقیم', offer: 'تا ۵۰٪ تخفیف', channel: 'پیامک + ایمیل', budget: '۵,۰۰۰,۰۰۰ تومان' },
+                { id: 't2', title: 'شب یلدا (طولانی‌ترین تخفیف)', goal: 'جذب لید', offer: 'کد تخفیف یلدایی', channel: 'اینستاگرام + پیامک', budget: '۳,۰۰۰,۰۰۰ تومان' },
+                { id: 't3', title: 'عید نوروز (شروع تازه)', goal: 'آگاهی از برند', offer: 'بسته هدیه نوروزی', channel: 'پیامک انبوه', budget: '۴,۰۰۰,۰۰۰ تومان' },
+                { id: 't4', title: 'بازگشت به مدرسه', goal: 'فروش مستقیم', offer: 'تخفیف محصولات آموزشی', channel: 'ایمیل مارکتینگ', budget: '۲,۵۰۰,۰۰۰ تومان' },
+                { id: 't5', title: 'تخفیف فصلی تابستانه', goal: 'بازگشت مشتریان', offer: 'ارسال رایگان', channel: 'شبکه‌های اجتماعی', budget: '۱,۵۰۰,۰۰۰ تومان' }
+            ];
+
+            const handleTemplateSelect = (tmpl) => {
+                setNewCampaign({
+                    name: tmpl.title,
+                    goal: tmpl.goal,
+                    audience: 'مشتریان فعال قبلی',
+                    offer: tmpl.offer,
+                    channel: tmpl.channel,
+                    schedule: 'شروع از فردا',
+                    budget: tmpl.budget
+                });
+                setActiveTab('builder');
+                setWizardStep(1);
+            };
+
+            const handleSaveCampaign = () => {
+                if (!newCampaign.name) {
+                    alert('لطفا نام کمپین را وارد کنید.');
+                    return;
+                }
+                const campaignObj = {
+                    id: Date.now(),
+                    name: newCampaign.name,
+                    goal: newCampaign.goal,
+                    status: 'فعال',
+                    budget: newCampaign.budget,
+                    clicks: '0',
+                    conversion: '0%',
+                    sales: '۰ تومان'
+                };
+                setCampaigns([campaignObj, ...campaigns]);
+                alert('کمپین جدید با موفقیت ایجاد و ذخیره شد!');
+                setActiveTab('dashboard');
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col bg-slate-50 text-forest">
+                    {/* Header */}
+                    <header className="bg-forest text-cream shadow-md sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-cream text-forest font-black text-xl px-3 py-1.5 rounded-xl shadow">کمپینو</div>
+                                <span className="text-xs bg-forest-light text-cream px-2 py-1 rounded-full border border-cream/20">نسخه ابری</span>
+                            </div>
+                            <nav className="hidden md:flex gap-6 text-sm font-medium">
+                                <button onClick={() => setActiveTab('dashboard')} className={`hover:text-cream transition ${activeTab === 'dashboard' ? 'border-b-2 border-cream pb-1 font-bold' : ''}`}>داشبورد</button>
+                                <button onClick={() => setActiveTab('templates')} className={`hover:text-cream transition ${activeTab === 'templates' ? 'border-b-2 border-cream pb-1 font-bold' : ''}`}>قالب‌های آماده</button>
+                                <button onClick={() => setActiveTab('builder')} className={`hover:text-cream transition ${activeTab === 'builder' ? 'border-b-2 border-cream pb-1 font-bold' : ''}`}>ساخت کمپین (۷ مرحله‌ای)</button>
+                                <button onClick={() => setActiveTab('settings')} className={`hover:text-cream transition ${activeTab === 'settings' ? 'border-b-2 border-cream pb-1 font-bold' : ''}`}>تنظیمات و پروفایل</button>
+                            </nav>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setActiveTab('builder')} className="bg-cream text-forest px-4 py-2 rounded-xl font-bold text-sm hover:bg-cream-dark transition shadow">
+                                    + کمپین جدید
+                                </button>
+                            </div>
+                        </div>
+                        {/* Mobile Navigation Bar */}
+                        <div className="md:hidden flex justify-around bg-forest-dark py-2 border-t border-cream/10 text-xs">
+                            <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'text-cream font-bold' : 'text-cream/70'}>داشبورد</button>
+                            <button onClick={() => setActiveTab('templates')} className={activeTab === 'templates' ? 'text-cream font-bold' : 'text-cream/70'}>قالب‌ها</button>
+                            <button onClick={() => setActiveTab('builder')} className={activeTab === 'builder' ? 'text-cream font-bold' : 'text-cream/70'}>سازنده</button>
+                            <button onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'text-cream font-bold' : 'text-cream/70'}>تنظیمات</button>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+                        {/* DASHBOARD TAB */}
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-6">
+                                <div className="bg-gradient-to-r from-forest to-forest-light text-cream p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                                    <div>
+                                        <h1 className="text-2xl font-black mb-2">سلام، مدیر عزیز 👋</h1>
+                                        <p className="text-cream/80 text-sm">به پلتفرم هوشمند کمپینو خوش آمدید. عملکرد کمپین‌های بازاریابی شما عالی است.</p>
+                                    </div>
+                                    <button onClick={() => setActiveTab('builder')} className="bg-cream text-forest font-bold px-6 py-3 rounded-2xl shadow hover:bg-cream-light transition">
+                                        ساخت کمپین جدید با ویزارد ۷ مرحله‌ای
+                                    </button>
+                                </div>
+
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-forest/10 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">کمپین‌های فعال</p>
+                                            <h3 className="text-2xl font-black text-forest">{campaigns.filter(c => c.status === 'فعال').length}</h3>
+                                            <span className="text-[10px] text-emerald-600 font-bold">↑ ۲ کمپین جدید این ماه</span>
+                                        </div>
+                                        <div className="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center text-forest font-bold text-xl">🚀</div>
+                                    </div>
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-forest/10 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">نرخ تبدیل میانگین</p>
+                                            <h3 className="text-2xl font-black text-forest">۴.۲٪</h3>
+                                            <span className="text-[10px] text-emerald-600 font-bold">↑ ۰.۸٪ رشد نسبت به ماه قبل</span>
+                                        </div>
+                                        <div className="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center text-forest font-bold text-xl">📈</div>
+                                    </div>
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-forest/10 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">کلیک‌های کل</p>
+                                            <h3 className="text-2xl font-black text-forest">۱,۶۹۰</h3>
+                                            <span className="text-[10px] text-emerald-600 font-bold">↑ ۱۲٪ تعامل بیشتر</span>
+                                        </div>
+                                        <div className="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center text-forest font-bold text-xl">🖱️</div>
+                                    </div>
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-forest/10 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">فروش کل</p>
+                                            <h3 className="text-2xl font-black text-forest">۳۲,۷۰۰,۰۰۰ تومان</h3>
+                                            <span className="text-[10px] text-emerald-600 font-bold">↑ ۱۵٪ افزایش درآمد</span>
+                                        </div>
+                                        <div className="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center text-forest font-bold text-xl">💰</div>
+                                    </div>
+                                </div>
+
+                                {/* Active Campaigns Table */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-forest/10 overflow-hidden">
+                                    <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                                        <h3 className="font-bold text-lg text-forest">لیست کمپین‌های شما (ذخیره شده در LocalStorage)</h3>
+                                        <button onClick={() => setActiveTab('templates')} className="text-xs text-forest bg-cream px-3 py-1.5 rounded-xl font-bold hover:bg-cream-dark">مشاهده قالب‌های آماده</button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-right text-sm">
+                                            <thead className="bg-gray-50 text-gray-600 border-b">
+                                                <tr>
+                                                    <th className="p-3">نام کمپین</th>
+                                                    <th className="p-3">هدف</th>
+                                                    <th className="p-3">وضعیت</th>
+                                                    <th className="p-3">بودجه</th>
+                                                    <th className="p-3">کلیک‌ها</th>
+                                                    <th className="p-3">نرخ تبدیل</th>
+                                                    <th className="p-3">فروش</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {campaigns.map((c) => (
+                                                    <tr key={c.id} className="border-b hover:bg-gray-50 transition">
+                                                        <td className="p-3 font-bold">{c.name}</td>
+                                                        <td className="p-3 text-gray-600">{c.goal}</td>
+                                                        <td className="p-3">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.status === 'فعال' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                                                {c.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-3">{c.budget}</td>
+                                                        <td className="p-3">{c.clicks}</td>
+                                                        <td className="p-3">{c.conversion}</td>
+                                                        <td className="p-3 font-semibold text-emerald-700">{c.sales}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TEMPLATES TAB */}
+                        {activeTab === 'templates' && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-forest">قالب‌های آماده کمپین</h2>
+                                        <p className="text-sm text-gray-600">یکی از قالب‌های زیر را انتخاب کنید تا به صورت خودکار در ویزارد ساخت کمپین بارگذاری شود.</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {templates.map(tmpl => (
+                                        <div key={tmpl.id} className="bg-white rounded-2xl p-5 shadow-sm border border-forest/10 flex flex-col justify-between hover:shadow-md transition">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <span className="bg-cream text-forest text-xs font-bold px-2.5 py-1 rounded-lg">{tmpl.goal}</span>
+                                                    <span className="text-xs text-gray-400">پیش‌ساخته</span>
+                                                </div>
+                                                <h3 className="font-bold text-lg text-forest mb-2">{tmpl.title}</h3>
+                                                <p className="text-sm text-gray-600 mb-4">پیشنهاد: <span className="font-semibold text-forest">{tmpl.offer}</span></p>
+                                                <div className="space-y-1 text-xs text-gray-500 mb-4">
+                                                    <div>کانال ارتباطی: {tmpl.channel}</div>
+                                                    <div>بودجه پیشنهادی: {tmpl.budget}</div>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleTemplateSelect(tmpl)}
+                                                className="w-full bg-forest text-cream py-2.5 rounded-xl font-bold text-sm hover:bg-forest-light transition shadow">
+                                                استفاده از این قالب و ویرایش
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* CAMPAIGN BUILDER WIZARD (7 STEPS) */}
+                        {activeTab === 'builder' && (
+                            <div className="bg-white rounded-3xl shadow-sm border border-forest/10 p-6 md:p-8 space-y-8">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-forest">ویزارد هوشمند ساخت کمپین (۷ مرحله‌ای)</h2>
+                                        <p className="text-sm text-gray-600">مرحله {wizardStep} از ۷: اطلاعات کمپین خود را قدم به قدم تکمیل کنید.</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {[1, 2, 3, 4, 5, 6, 7].map(step => (
+                                            <button 
+                                                key={step}
+                                                onClick={() => setWizardStep(step)}
+                                                className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center transition ${wizardStep === step ? 'bg-forest text-cream shadow' : 'bg-cream text-forest hover:bg-cream-dark'}`}>
+                                                {step}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Step Content */}
+                                <div className="py-4">
+                                    {wizardStep === 1 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۱: هدف‌گذاری کمپین</h3>
+                                            <p className="text-sm text-gray-600">هدف اصلی از اجرای این کمپین بازاریابی چیست؟</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                {['فروش مستقیم', 'جذب لید (سرنخ تجاری)', 'آگاهی از برند'].map(g => (
+                                                    <button 
+                                                        key={g} 
+                                                        onClick={() => setNewCampaign({...newCampaign, goal: g})}
+                                                        className={`p-4 rounded-2xl border text-right transition font-bold ${newCampaign.goal === g ? 'border-forest bg-cream/50 text-forest shadow' : 'border-gray-200 hover:border-forest/50'}`}>
+                                                        {g}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="mt-4">
+                                                <label className="block text-sm font-bold mb-2">نام کمپین:</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={newCampaign.name} 
+                                                    onChange={e => setNewCampaign({...newCampaign, name: e.target.value})}
+                                                    placeholder="مثال: کمپین فروش پاییزه" 
+                                                    className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-forest"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 2 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۲: مخاطبان هدف</h3>
+                                            <p className="text-sm text-gray-600">این کمپین برای کدام گروه از مخاطبان ارسال شود؟</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {['همه مشتریان', 'مشتریان غیرفعال (۶ ماه گذشته)', 'خریداران قبلی VIP', 'لیدهای جدید وب‌سایت'].map(aud => (
+                                                    <button 
+                                                        key={aud} 
+                                                        onClick={() => setNewCampaign({...newCampaign, audience: aud})}
+                                                        className={`p-4 rounded-2xl border text-right transition font-bold ${newCampaign.audience === aud ? 'border-forest bg-cream/50 text-forest shadow' : 'border-gray-200 hover:border-forest/50'}`}>
+                                                        {aud}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 3 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۳: پیشنهاد فروش (Offer)</h3>
+                                            <p className="text-sm text-gray-600">چه پیشنهاد وسوسه‌کننده‌ای به مخاطب می‌دهید؟</p>
+                                            <input 
+                                                type="text" 
+                                                value={newCampaign.offer} 
+                                                onChange={e => setNewCampaign({...newCampaign, offer: e.target.value})}
+                                                placeholder="مثال: ۲۰٪ تخفیف + ارسال رایگان" 
+                                                className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-forest"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 4 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۴: کانال ارتباطی (پیامک / پست / ایمیل)</h3>
+                                            <p className="text-sm text-gray-600">پیام کمپین از چه طریق به دست مخاطب می‌رسد؟</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                {['پیامک انبوه (SMS)', 'پست اینستاگرام / شبکه‌های اجتماعی', 'ایمیل مارکتینگ'].map(ch => (
+                                                    <button 
+                                                        key={ch} 
+                                                        onClick={() => setNewCampaign({...newCampaign, channel: ch})}
+                                                        className={`p-4 rounded-2xl border text-right transition font-bold ${newCampaign.channel === ch ? 'border-forest bg-cream/50 text-forest shadow' : 'border-gray-200 hover:border-forest/50'}`}>
+                                                        {ch}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 5 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۵: زمان‌بندی ارسال</h3>
+                                            <p className="text-sm text-gray-600">کمپین چه زمانی باید اجرا شود؟</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {['ارسال فوری', 'زمان‌بندی شده برای آخر هفته'].map(sch => (
+                                                    <button 
+                                                        key={sch} 
+                                                        onClick={() => setNewCampaign({...newCampaign, schedule: sch})}
+                                                        className={`p-4 rounded-2xl border text-right transition font-bold ${newCampaign.schedule === sch ? 'border-forest bg-cream/50 text-forest shadow' : 'border-gray-200 hover:border-forest/50'}`}>
+                                                        {sch}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 6 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۶: بودجه کمپین</h3>
+                                            <p className="text-sm text-gray-600">چه مقدار بودجه برای این کمپین تخصیص می‌دهید؟</p>
+                                            <input 
+                                                type="text" 
+                                                value={newCampaign.budget} 
+                                                onChange={e => setNewCampaign({...newCampaign, budget: e.target.value})}
+                                                placeholder="مثال: ۵,۰۰۰,۰۰۰ تومان" 
+                                                className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-forest"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 7 && (
+                                        <div className="space-y-6">
+                                            <h3 className="text-lg font-bold text-forest">مرحله ۷: بازبینی نهایی و تایید</h3>
+                                            <p className="text-sm text-gray-600">لطفا اطلاعات کمپین خود را بررسی کرده و سپس آن را ذخیره کنید:</p>
+                                            <div className="bg-cream/40 p-6 rounded-2xl space-y-3 text-sm border border-forest/10">
+                                                <div className="flex justify-between border-b border-forest/10 pb-2">
+                                                    <span className="text-gray-600">نام کمپین:</span>
+                                                    <span className="font-bold text-forest">{newCampaign.name || 'بدون نام'}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-forest/10 pb-2">
+                                                    <span className="text-gray-600">هدف:</span>
+                                                    <span className="font-bold text-forest">{newCampaign.goal}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-forest/10 pb-2">
+                                                    <span className="text-gray-600">مخاطبان:</span>
+                                                    <span className="font-bold text-forest">{newCampaign.audience}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-forest/10 pb-2">
+                                                    <span className="text-gray-600">پیشنهاد فروش:</span>
+                                                    <span className="font-bold text-forest">{newCampaign.offer}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-forest/10 pb-2">
+                                                    <span className="text-gray-600">کانال ارتباطی:</span>
+                                                    <span className="font-bold text-forest">{newCampaign.channel}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-forest/10 pb-2">
+                                                    <span className="text-gray-600">زمان‌بندی:</span>
+                                                    <span className="font-bold text-forest">{newCampaign.schedule}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">بودجه:</span>
+                                                    <span className="font-bold text-emerald-700">{newCampaign.budget}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Wizard Navigation Buttons */}
+                                <div className="flex justify-between pt-4 border-t">
+                                    <button 
+                                        onClick={() => setWizardStep(prev => Math.max(1, prev - 1))}
+                                        disabled={wizardStep === 1}
+                                        className="px-6 py-2.5 rounded-xl border border-forest/20 text-forest font-bold disabled:opacity-30 hover:bg-gray-50 transition">
+                                        مرحله قبل
+                                    </button>
+                                    {wizardStep < 7 ? (
+                                        <button 
+                                            onClick={() => setWizardStep(prev => Math.min(7, prev + 1))}
+                                            className="px-6 py-2.5 rounded-xl bg-forest text-cream font-bold hover:bg-forest-light transition shadow">
+                                            مرحله بعد
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={handleSaveCampaign}
+                                            className="px-8 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition shadow">
+                                            ذخیره و انتشار کمپین 🚀
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SETTINGS TAB */}
+                        {activeTab === 'settings' && (
+                            <div className="bg-white rounded-3xl shadow-sm border border-forest/10 p-6 md:p-8 space-y-6 max-w-2xl mx-auto">
+                                <h2 className="text-2xl font-black text-forest">تنظیمات و پروفایل کاربری</h2>
+                                <p className="text-sm text-gray-600">اطلاعات سازمان و کلیدهای اتصال به درگاه‌های پیامکی و ایمیل را مدیریت کنید.</p>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold mb-2">نام سازمان / کسب‌وکار:</label>
+                                        <input 
+                                            type="text" 
+                                            value={settings.companyName} 
+                                            onChange={e => setSettings({...settings, companyName: e.target.value})}
+                                            className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-forest" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-2">ایمیل مدیریت:</label>
+                                        <input 
+                                            type="email" 
+                                            value={settings.email} 
+                                            onChange={e => setSettings({...settings, email: e.target.value})}
+                                            className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-forest" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-2">توکن پنل پیامک (SMS API):</label>
+                                        <input 
+                                            type="text" 
+                                            value={settings.smsApi} 
+                                            onChange={e => setSettings({...settings, smsApi: e.target.value})}
+                                            className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-forest font-mono text-sm" 
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-3 pt-2">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={settings.notifications} 
+                                            onChange={e => setSettings({...settings, notifications: e.target.checked})}
+                                            className="w-5 h-5 accent-forest rounded" 
+                                            id="notif"
+                                        />
+                                        <label htmlFor="notif" className="text-sm font-bold cursor-pointer">دریافت گزارش‌های هفتگی عملکرد کمپین‌ها از طریق ایمیل</label>
+                                    </div>
+                                    <button 
+                                        onClick={() => alert('تنظیمات با موفقیت ذخیره شد!')}
+                                        className="w-full bg-forest text-cream py-3 rounded-xl font-bold hover:bg-forest-light transition shadow mt-4">
+                                        ذخیره تغییرات تنظیمات
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-forest text-cream py-6 mt-12 text-center text-xs border-t border-cream/10">
+                        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>تمامی حقوق برای پلتفرم کمپینو (Campino SaaS) محفوظ است.</div>
+                            <div className="flex gap-4">
+                                <span>اجرای مستقیم در گیت‌هاب پیج (GitHub Pages)</span>
+                                <span>•</span>
+                                <span>رنگ‌بندی Forest Green & Cream</span>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
 </html>
